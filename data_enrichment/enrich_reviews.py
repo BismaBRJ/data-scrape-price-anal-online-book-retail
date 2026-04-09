@@ -1,17 +1,17 @@
 # getting the API key
-# see secrets.py.example if you haven't set up secrets.py
+# see secrets.json.example if you haven't set up secrets.json
 
 from pathlib import Path
-import importlib.util
+import json
 
 TOPDIR_PATH = Path(__file__).parent.parent
-SECRETS_PATH = TOPDIR_PATH / "secrets.py"
+SECRETS_PATH = TOPDIR_PATH / "secrets.json"
 
-secrets_spec = importlib.util.spec_from_file_location("secrets", SECRETS_PATH)
-secrets_module = importlib.util.module_from_spec(secrets_spec)
-secrets_spec.loader.exec_module(secrets_module)
+with open(SECRETS_PATH, 'r', encoding="utf-8") as file:
+    SECRETS_JSON = json.load(file)
 
-GEMINI_API_KEY = secrets_module.GEMINI_API_KEY
+GEMINI_API_KEY = SECRETS_JSON["GEMINI_API_KEY"]
+print(GEMINI_API_KEY)
 
 # now on to the AI stuff
 """
