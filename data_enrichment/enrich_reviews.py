@@ -11,7 +11,6 @@ with open(SECRETS_PATH, 'r', encoding="utf-8") as file:
     SECRETS_JSON = json.load(file)
 
 GEMINI_API_KEY = SECRETS_JSON["GEMINI_API_KEY"]
-print(GEMINI_API_KEY)
 
 # now on to the AI stuff
 """
