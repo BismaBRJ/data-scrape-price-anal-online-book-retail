@@ -5,7 +5,7 @@ from pathlib import Path
 import polars as pl
 
 # Constants (settings, paths etc)
-CSV_NAME = "reviews_sep_detail" # with or without .csv
+CSV_NAME = "selling_detail" # with or without .csv
 CSV_FOLDER_PATH = (
     Path(__file__).parent /
     "dataset_from_html" / "results"
