@@ -1,5 +1,5 @@
 # always set to False unless about to run
-USE_MODEL = True
+USE_MODEL = False
 
 # for path stuff
 from pathlib import Path
