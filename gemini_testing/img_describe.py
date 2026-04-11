@@ -16,7 +16,7 @@ with open(SECRETS_PATH, 'r', encoding="utf-8") as file:
     SECRETS_JSON = json.load(file)
 
 GEMINI_API_KEY = SECRETS_JSON["GEMINI_API_KEY"]
-print("API key found.")
+print("API key obtained.")
 
 # input images
 IMGS_FOLDER = Path(__file__).parent / "images"

@@ -7,10 +7,12 @@ import json
 TOPDIR_PATH = Path(__file__).parent.parent
 SECRETS_PATH = TOPDIR_PATH / "secrets.json"
 
+print("Reading API key...")
 with open(SECRETS_PATH, 'r', encoding="utf-8") as file:
     SECRETS_JSON = json.load(file)
 
 GEMINI_API_KEY = SECRETS_JSON["GEMINI_API_KEY"]
+print("API key obtained.")
 
 # now on to the AI stuff
 from google import genai
