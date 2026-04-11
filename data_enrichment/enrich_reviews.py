@@ -36,7 +36,8 @@ MY_PROMPT = """
 You are an expert at least as good as Google Lens.
 Also, you are an experienced, master librarian.
 Reply with metadata and any extra information about the book you see.
-Extra information includes anything useful from search results. 
+Extra information includes anything useful from search results.
+Cite any sources you use.
 """
 
 class BookInfo(BaseModel):
@@ -48,11 +49,12 @@ class BookInfo(BaseModel):
     pages: int | None = Field(description="Number of pages in the book.")
     hard: bool | None = Field(description="True if hardcover, False if paperback.")
     extra_info: dict[str, str] = Field(description="Any extra information.")
+    sources: dict[str, str] = Field(description="Sources used and for what.")
 
 # respecting rate limits with random waiting times
 
 MAX_REQS_PER_MIN = 15
-avg_waiting_time = 1/(MAX_REQS_PER_MIN*2)
+avg_waiting_time = np.ceil(60/MAX_REQS_PER_MIN)
 
 # seed will be yyyymmddhhmmss at execution
 now = datetime.now()
@@ -61,13 +63,29 @@ seed_str = (
         str(now.hour).zfill(2) + str(now.minute).zfill(2) +
         str(now.second).zfill(2)
     )
+print("Random seed:", seed_str)
 seed_int = int(seed_str)
 
 rng = np.random.default_rng(seed=seed_int)
-waiting_times = rng.exponential(
-        scale=avg_waiting_time,
-        size=len(my_imgs_paths)
-    )
+n_imgs = len(my_imgs_paths)
+waiting_times = np.zeros(n_imgs)
+while (
+    (np.convolve(waiting_times, np.ones(MAX_REQS_PER_MIN), mode="valid")
+     <= 60).any()
+    # if any MAX_REQS_PER_MIN consecutive requests would occur under a minute
+    ):
+    # then up the average time...
+    avg_waiting_time += 1
+    # and reroll the dice
+    waiting_times = rng.exponential(
+            scale=avg_waiting_time,
+            size=n_imgs
+        )
+
+print("Planned average waiting time:", avg_waiting_time)
+print("Planned waiting times:")
+print(waiting_times)
+print("Total waiting time:", waiting_times.sum())
 
 # finally, data enrichment with Gemini
 # TODO
