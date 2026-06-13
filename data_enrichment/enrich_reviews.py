@@ -7,8 +7,8 @@ import json
 import polars as pl # for dealing with CSV
 import base64
 from pydantic import BaseModel, Field
-from datetime import datetime # current time, for random seed
-import numpy as np # for RNG
+import numpy as np # for ceil function
+import utils_enrich # for RNG
 import time # for time.sleep()
 from google import genai
 import sys # for sys.exit()
@@ -26,9 +26,18 @@ with open(SECRETS_PATH, 'r', encoding="utf-8") as file:
 GEMINI_API_KEY = SECRETS_JSON["GEMINI_API_KEY"]
 print("API key obtained.")
 
-# input images?? directly pull from CSV, temporarily export?
+# read CSV
+CSV_FOLDER_PATH = (
+        TOPDIR_PATH / "dataset_from_html" / "results"
+    )
+OLD_CSV_NAME = "reviews_sep_detail"
+old_csv_path = (CSV_FOLDER_PATH / OLD_CSV_NAME).with_suffix(".csv") 
+old_df = pl.read_csv(old_csv_path, glob=False)
+old_df_cols = old_df.columns
+old_df_rowlen = len(old_df)
+
+# input images?? directly pull from CSV
 # TODO
-my_imgs_paths = []
 
 # prompt engineering and JSON output structuring
 
@@ -53,34 +62,21 @@ class BookInfo(BaseModel):
 
 # respecting rate limits with random waiting times
 
+n_imgs = old_df_rowlen
 MAX_REQS_PER_MIN = 15
-avg_waiting_time = np.ceil(60/MAX_REQS_PER_MIN)
+init_avg_waiting_time = np.ceil(60/MAX_REQS_PER_MIN)
 
 # seed will be yyyymmddhhmmss at execution
-now = datetime.now()
-seed_str = (
-        str(now.year) + str(now.month).zfill(2) + str(now.day).zfill(2) +
-        str(now.hour).zfill(2) + str(now.minute).zfill(2) +
-        str(now.second).zfill(2)
-    )
-print("Random seed:", seed_str)
-seed_int = int(seed_str)
+seed_int = utils_enrich.get_datetime_seed()
+print("Random seed:", seed_int)
 
-rng = np.random.default_rng(seed=seed_int)
-n_imgs = len(my_imgs_paths)
-waiting_times = np.zeros(n_imgs)
-while (
-    (np.convolve(waiting_times, np.ones(MAX_REQS_PER_MIN), mode="valid")
-     <= 60).any()
-    # if any MAX_REQS_PER_MIN consecutive requests would occur under a minute
-    ):
-    # then up the average time...
-    avg_waiting_time += 1
-    # and reroll the dice
-    waiting_times = rng.exponential(
-            scale=avg_waiting_time,
-            size=n_imgs
-        )
+(avg_waiting_time, waiting_times) = utils_enrich.get_floored_waiting_times(
+        n_data=n_imgs,
+        init_avg=init_avg_waiting_time,
+        flooring_window_size=MAX_REQS_PER_MIN,
+        the_floor=60,
+        seed_int=seed_int
+    )
 
 print("Planned average waiting time:", avg_waiting_time)
 print("Planned waiting times:")
