@@ -10,6 +10,7 @@ CSV_FOLDER_PATH = (
     Path(__file__).parent /
     "dataset_from_html" / "results"
 )
+PRINT_ROWS = 0
 PRINT_COLS = ["title", "author"]
 
 # Script
@@ -22,6 +23,13 @@ print("CSV opened.")
 print(peek_df)
 print("CSV columns:")
 print(peek_df.columns)
+
+for idx, row in enumerate(peek_df.iter_rows()):
+    if (idx < PRINT_ROWS):
+        print(f"Row {idx+1}:")
+        print(row)
+    else:
+        break
 
 for col_name in PRINT_COLS:
     print("Column:", col_name)
