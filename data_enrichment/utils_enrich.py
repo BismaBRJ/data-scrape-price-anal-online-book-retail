@@ -1,5 +1,8 @@
 from datetime import datetime
 import numpy as np
+from base64 import b64decode
+from io import BytesIO
+from PIL import Image
 
 def get_datetime_seed():
     now = datetime.now()
@@ -71,5 +74,15 @@ def get_floored_waiting_times(
                 the_floor=the_floor
             )
 
-    return (avg_waiting_time, waiting_times)
+    return (rng, avg_waiting_time, waiting_times)
+
+def get_PIL_from_base64_text(base64_text):
+    trimmed_base64 = base64_text
+    if ((len(base64_text) > 23)
+        and base64_text[:23] == "data:image/jpeg;base64,"):
+        trimmed_base64 = base64_text[23:]
+
+    io_bytes_obj = BytesIO(b64decode(trimmed_base64))
+    the_img = Image.open(fp=io_bytes_obj)
+    return the_img
 
