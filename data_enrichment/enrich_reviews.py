@@ -36,7 +36,7 @@ CSV_FOLDER_PATH = (
 OLD_CSV_NAME = "reviews_sep_detail"
 old_csv_path = (CSV_FOLDER_PATH / OLD_CSV_NAME).with_suffix(".csv") 
 old_df = pl.read_csv(old_csv_path, glob=False)
-old_df_cols = old_df.columns
+# old_df_cols = old_df.columns
 old_df_rowlen = len(old_df)
 
 # get reference to thumbnails column on CSV (not deep copy!) 
@@ -90,17 +90,14 @@ print("Total waiting time:", waiting_times.sum())
 
 # finally, data enrichment with Gemini
 
-"""
-new_df = images_df.with_columns(
-        # default empty values
-        year = pl.lit(0),
-        publisher = pl.lit(""),
-        edition = pl.lit(0),
-        pages = pl.lit(0),
-        hard = pl.lit(False), # assume paperback
-        extra_info_sources = pl.lit("") # string, to fit in CSV
-    )
-"""
+new_df_dict = {
+        "year": [], # default: 0
+        "publisher": [], # default: ""
+        "edition": [], # default: 1
+        "pages": [], # default: 0
+        "hard": [], # default: False (assume paperback)
+        "extra_info_sources": [] # default: ""
+    }
 
 if USE_MODEL:
     print("Starting Gemini API client...")
@@ -110,9 +107,10 @@ if USE_MODEL:
         img_txt = row[0]
         img_obj = utils_enrich.get_PIL_from_base64_text(img_txt)
 
-        print(f"Row {idx+1}")
+        print(f"Row {idx+1} of {old_df_rowlen}")
         print(f"Waiting {waiting_times[idx]} seconds...")
         time.sleep(waiting_times[idx])
+        result_json = dict()
         success = False
         while (not success):
             print("Calling API...")
@@ -139,7 +137,24 @@ if USE_MODEL:
                 print(f"Failed, waiting {backup_waiting_time} seconds...")
                 time.sleep(backup_waiting_time)
 
-        print("Row {idx+1} success!")
+        print(f"API calling has succeeded for row {idx+1}")
+
+        for key in ("year", "publisher", "edition", "pages", "hard"):
+            new_df_dict[key].append(result_json[key])
+
+        merged_extra_info_sources = (
+                result_json["extra_info"] + '\n' +
+                "Sources:\n" + result_json["sources"]
+            )
+        new_df_dict["extra_info_sources"].append(merged_extra_info_sources)
+
+        print(f"Data for row {idx+1} stored")
+
+    print("All rows processed, merging with old dataframe...")
+
+    # I am pretty sure the code below is problematic. TODO fix
+    images_df = images_df.with_columns(new_df_dict)
+    new_df = old_df.with_columns(images_df)
 
     """
     my_imgs = []
