@@ -1,6 +1,6 @@
 # always set to False unless about to run
 USE_MODEL = False
-MODEL_NAME = "gemini-3.1-flash-lite-preview"
+MODEL_NAME = "gemini-3.1-flash-lite"
 
 # Imports
 print("Importing libraries etc. ...")
